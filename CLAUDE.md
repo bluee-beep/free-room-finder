@@ -25,7 +25,7 @@ free-room-finder/
 ├── CHANGELOG.md             # 变更日志（版本历史）
 ├── .gitignore               # 排除 *.pdf、versions/ 等含个人信息的本地产物
 ├── versions/
-│   └── v1.1.0_2026-10-26/   # 完整版本快照（只读存档，仅本地）
+│   └── v1.1.1_2026-10-26/   # 完整版本快照（只读存档，仅本地）
 └── *.pdf                    # 原始教室课表（只读数据源，不入公开仓库）
 ```
 
@@ -65,6 +65,7 @@ data/schedule.json（meta/rooms/warnings）
 9. **文件一致性**：构建校验文件名与 PDF 内部教室号一致，并检查归一化内容签名重复；不合格文件不进入可用列表。当前 29 份均有效（原 404 曾是 403 复制，已替换）。
 10. **公开发布与隐私**：仓库 `bluee-beep/free-room-finder` 公开，站点由 GitHub Pages 从 `main` 分支 `/docs` 发布。源 PDF 含任课教师姓名，`*.pdf` 与含 PDF 的 `versions/` 均被 `.gitignore` 排除；308 覆盖表已删除手工教师字段。构建把同一份内联 HTML 写到 `空教室查询.html` 与 `docs/index.html`，推送即上线。教室显示名去掉楼名前缀（解析正则需要保留原文匹配）。
 11. **品牌命名**：对外名称统一为 **Free Room Finder**（英文），页面标题、H1、品牌图标（FR）一致；不在用户可见文案中使用原机构名。
+12. **移动端安全区**：`viewport-fit=cover` 必须保留，否则 `env(safe-area-inset-*)` 恒为 0。顶栏用 `padding-top/left/right` 铺开背景并避让灵动岛/刘海，`.app` 与 toast 用 `calc(... + var(--safe-bottom))` 避让 Home 指示条；表格视图的吸顶表头用 `top: var(--safe-top)`，不要再加 `padding-top`（会在未吸顶时留白）。改动顶栏布局时需同时回归 iPhone 竖屏、横屏与总览表。
 
 ## 构建与测试命令
 
@@ -83,7 +84,7 @@ node tools/test_logic.js
 - 根目录是工作区；`versions/` 存放只读版本快照。
 - 每次发布：更新 `CHANGELOG.md`，创建 `versions/vX.Y.Z_YYYY-MM-DD/`，复制 HTML、`data/`、`tools/`、README/CLAUDE/CHANGELOG 与 29 份 PDF，生成 `VERSION.md`、`PDF_MANIFEST.txt`、`SHA256SUMS.txt`。
 - 快照可独立打开和重新构建；不要修改快照文件。
-- 当前稳定版：**v1.1.0（2026-10-26）**，快照 `versions/v1.1.0_2026-10-26/`（仅本地，不入库）。
+- 当前稳定版：**v1.1.1（2026-10-26）**，快照 `versions/v1.1.1_2026-10-26/`（仅本地，不入库）。
 
 ## 已知数据事实
 
