@@ -123,7 +123,7 @@
         if (validPeriods(saved.periods)) {
           settings.periods = clonePeriods(saved.periods);
         }
-        if ([0, 2, 3, 4].indexOf(Number(saved.minLen)) >= 0) {
+        if ([0, 2, 4, 8].indexOf(Number(saved.minLen)) >= 0) {
           settings.minLen = Number(saved.minLen);
         }
         if (saved.view === "list" || saved.view === "table") {
@@ -162,7 +162,7 @@
       state.weekOverride = week;
     }
     var min = params.get("min");
-    if (min !== null && [0, 2, 3, 4].indexOf(Number(min)) >= 0) {
+    if (min !== null && [0, 2, 4, 8].indexOf(Number(min)) >= 0) {
       state.minLen = Number(min);
     }
     var view = params.get("view");

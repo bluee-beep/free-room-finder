@@ -460,8 +460,8 @@ body.table-view .matrix-head-wrap { top: var(--safe-top); }
     <div class="segmented" id="minFilter" role="group" aria-label="最少连空节数">
       <button type="button" data-min="0">不限</button>
       <button type="button" data-min="2" class="active">≥2 节</button>
-      <button type="button" data-min="3">≥3 节</button>
       <button type="button" data-min="4">≥4 节</button>
+      <button type="button" data-min="8">≥8 节</button>
     </div>
     <label class="toggle" id="nowToggle"><input id="nowFilter" type="checkbox"><span>此刻空闲</span></label>
     <label class="toggle" id="nextBlockToggle" title="接下来的连续两节（一大节）"><input id="nextBlockFilter" type="checkbox"><span>下一大节</span></label>
@@ -509,8 +509,8 @@ body.table-view .matrix-head-wrap { top: var(--safe-top); }
           <select id="defaultMin">
             <option value="0">不限</option>
             <option value="2">至少 2 节</option>
-            <option value="3">至少 3 节</option>
             <option value="4">至少 4 节</option>
+            <option value="8">至少 8 节</option>
           </select>
         </label>
       </section>
