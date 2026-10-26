@@ -1,0 +1,10 @@
+# 源 PDF 与版本快照含任课教师姓名，不进入公开仓库
+*.pdf
+versions/
+
+# 本地产物
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+.claude/

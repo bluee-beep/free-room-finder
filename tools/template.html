@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Free Room Finder</title>
+<meta name="description" content="空教室查询：按日期与连堂筛选，快速找到此刻空闲的自习教室。">
+<style>
+/* ==================== 设计变量 ==================== */
+:root {
+  --bg: #f4f6f8;
+  --bg-glow: #e8f5ef;
+  --surface: #ffffff;
+  --surface-2: #f7f9fb;
+  --surface-3: #eef2f6;
+  --ink: #17212b;
+  --muted: #667085;
+  --faint: #98a2b3;
+  --line: #e3e8ef;
+  --brand: #0f9d76;
+  --brand-deep: #0a7a5b;
+  --brand-soft: #e6f7f0;
+  --brand-ink: #087556;
+  --busy: #b54708;
+  --busy-soft: #fff3e8;
+  --unknown: #667085;
+  --unknown-soft: #eef1f4;
+  --blue: #175cd3;
+  --blue-soft: #eef4ff;
+  --danger: #c4320a;
+  --shadow: 0 10px 30px rgba(16, 24, 40, .07);
+  --shadow-sm: 0 2px 8px rgba(16, 24, 40, .05);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --font: "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, -apple-system, "PingFang SC", "Noto Sans SC", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f141a;
+    --bg-glow: #10251f;
+    --surface: #161d26;
+    --surface-2: #1b2430;
+    --surface-3: #222d3a;
+    --ink: #e7edf5;
+    --muted: #9aa8b7;
+    --faint: #6f7e8e;
+    --line: #263244;
+    --brand: #3ddc97;
+    --brand-deep: #24b97d;
+    --brand-soft: #12342a;
+    --brand-ink: #8ce9c4;
+    --busy: #ffb26b;
+    --busy-soft: #32251a;
+    --unknown: #a2adba;
+    --unknown-soft: #222b36;
+    --blue: #8ab4ff;
+    --blue-soft: #17233b;
+    --danger: #ff8f6b;
+    --shadow: 0 12px 34px rgba(0, 0, 0, .28);
+    --shadow-sm: 0 2px 10px rgba(0, 0, 0, .2);
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  background:
+    radial-gradient(900px 420px at 8% -8%, var(--bg-glow), transparent 70%),
+    radial-gradient(700px 360px at 100% 0%, var(--blue-soft), transparent 65%),
+    var(--bg);
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--brand) 45%, transparent);
+  outline-offset: 2px;
+}
+[hidden] { display: none !important; }
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* ==================== 顶栏 ==================== */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+}
+.topbar-inner {
+  max-width: 1280px; margin: 0 auto; padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand-mark {
+  width: 46px; height: 46px; flex: 0 0 auto; border-radius: 14px;
+  display: grid; place-items: center;
+  color: #fff; font-weight: 800; font-size: 20px;
+  background: linear-gradient(140deg, #16b989, #08795a);
+  box-shadow: 0 8px 20px rgba(15, 157, 118, .28);
+}
+.brand-text { min-width: 0; }
+.brand-text h1 { margin: 0; font-size: 20px; letter-spacing: .2px; }
+.brand-text p { margin: 2px 0 0; color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.date-control {
+  display: flex; align-items: center; gap: 4px;
+  padding: 3px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--surface); box-shadow: var(--shadow-sm);
+}
+.date-control input { border: 0; background: transparent; padding: 5px 4px; min-width: 128px; }
+.icon-btn {
+  width: 34px; height: 34px; display: inline-grid; place-items: center;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
+  color: var(--ink); font-size: 18px; line-height: 1; padding: 0;
+}
+.icon-btn:hover { background: var(--surface-2); }
+.ghost-btn, .primary-btn {
+  border: 1px solid var(--line); border-radius: 10px; padding: 8px 13px;
+  background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+}
+.ghost-btn:hover { background: var(--surface-2); }
+.primary-btn { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
+.primary-btn:hover { background: var(--brand-deep); }
+.ghost-btn.small { padding: 5px 10px; font-size: 13px; }
+.link-btn { border: 0; background: none; color: var(--brand-ink); padding: 0; text-decoration: underline; text-underline-offset: 3px; }
+
+/* ==================== 主区 ==================== */
+.app { max-width: 1280px; margin: 0 auto; padding: 22px 24px 48px; }
+.hero {
+  position: relative; overflow: hidden;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px;
+  padding: 24px 26px; border: 1px solid var(--line); border-radius: 20px;
+  background:
+    radial-gradient(480px 180px at 100% 0%, rgba(15, 157, 118, .12), transparent 70%),
+    var(--surface);
+  box-shadow: var(--shadow);
+}
+.hero::after {
+  content: ""; position: absolute; right: -70px; bottom: -120px;
+  width: 260px; height: 260px; border-radius: 50%;
+  border: 28px solid color-mix(in srgb, var(--brand) 8%, transparent);
+  pointer-events: none;
+}
+.hero-kicker {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--brand-ink); font-size: 12px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+}
+.hero-kicker::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 4px var(--brand-soft); }
+.hero-title { margin: 8px 0 4px; font-size: clamp(26px, 3.4vw, 38px); line-height: 1.15; letter-spacing: -.02em; }
+.hero-sub { color: var(--muted); font-size: 13.5px; }
+.hero-sub strong { color: var(--ink); font-weight: 600; }
+.hero-stats { display: flex; align-items: stretch; gap: 10px; align-self: center; position: relative; z-index: 1; }
+.stat {
+  min-width: 92px; padding: 12px 14px; border: 1px solid var(--line);
+  border-radius: 14px; background: color-mix(in srgb, var(--surface) 78%, transparent);
+  text-align: center;
+}
+.stat span { display: block; font-size: 21px; font-weight: 750; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.stat small { display: block; margin-top: 2px; color: var(--muted); font-size: 11.5px; }
+
+/* ==================== 提示条 ==================== */
+.note-bar {
+  margin: 14px 0 0; padding: 10px 14px; border: 1px solid color-mix(in srgb, var(--blue) 20%, var(--line));
+  border-radius: 12px; background: var(--blue-soft); color: var(--blue);
+  font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center;
+}
+.note-bar:empty { display: none; }
+.note-bar .note-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .6; }
+
+/* ==================== 筛选条 ==================== */
+.toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 18px 0 16px; }
+.segmented {
+  display: inline-flex; align-items: center; gap: 2px; padding: 3px;
+  border: 1px solid var(--line); border-radius: 11px; background: var(--surface-2);
+}
+.segmented button {
+  border: 0; background: transparent; color: var(--muted); padding: 6px 10px;
+  border-radius: 8px; font-size: 13px; white-space: nowrap;
+}
+.segmented button:hover { color: var(--ink); }
+.segmented button.active { background: var(--surface); color: var(--brand-ink); font-weight: 650; box-shadow: var(--shadow-sm); }
+.toggle {
+  display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px;
+  border: 1px solid var(--line); border-radius: 11px; background: var(--surface);
+  font-size: 13px; white-space: nowrap; cursor: pointer; user-select: none;
+}
+.toggle input { accent-color: var(--brand); width: 15px; height: 15px; margin: 0; }
+.toggle.disabled { opacity: .55; cursor: not-allowed; }
+.toolbar .spacer { flex: 1 1 auto; }
+.search {
+  min-width: 190px; flex: 0 1 240px; padding: 9px 12px;
+  border: 1px solid var(--line); border-radius: 11px; background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+.search::placeholder { color: var(--faint); }
+.select {
+  padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface); color: var(--ink); font-size: 13px;
+}
+.toolbar-label { color: var(--muted); font-size: 12.5px; }
+
+/* ==================== 教室卡片 ==================== */
+.room-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
+.room-card {
+  position: relative; padding: 16px; border: 1px solid var(--line);
+  border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow-sm);
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+.room-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: color-mix(in srgb, var(--brand) 25%, var(--line)); }
+.room-card.muted { opacity: .72; }
+.room-card.has-unknown { border-style: dashed; }
+.room-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.room-id { font-size: 27px; font-weight: 800; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.room-name { color: var(--muted); font-size: 12.5px; margin-top: 5px; }
+.room-cap { color: var(--faint); font-size: 11.5px; margin-top: 1px; }
+.room-status { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.status {
+  display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px;
+  border-radius: 999px; font-size: 11.5px; font-weight: 650; white-space: nowrap;
+}
+.status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.status.free { color: var(--brand-ink); background: var(--brand-soft); }
+.status.busy { color: var(--busy); background: var(--busy-soft); }
+.status.unknown { color: var(--unknown); background: var(--unknown-soft); }
+.status.off { color: var(--muted); background: var(--surface-3); }
+.badge {
+  display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px;
+  border-radius: 999px; font-size: 10.5px; color: var(--muted);
+  background: var(--surface-3); border: 1px solid var(--line); white-space: nowrap;
+}
+.badge.warn { color: var(--busy); background: var(--busy-soft); border-color: color-mix(in srgb, var(--busy) 20%, var(--line)); }
+.badge.ok { color: var(--brand-ink); background: var(--brand-soft); border-color: color-mix(in srgb, var(--brand) 20%, var(--line)); }
+.window-list { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0 4px; }
+.window-pill {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  padding: 5px 9px; border-radius: 9px; font-size: 12px;
+  color: var(--brand-ink); background: var(--brand-soft);
+  border: 1px solid color-mix(in srgb, var(--brand) 18%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+.window-pill b { font-weight: 700; }
+.window-pill span { color: color-mix(in srgb, var(--brand-ink) 72%, var(--muted)); font-size: 11px; }
+.window-pill.short { color: var(--muted); background: var(--surface-3); border-color: var(--line); }
+.window-pill.short span { color: var(--faint); }
+.no-window { color: var(--muted); font-size: 12.5px; margin: 12px 0 4px; }
+.room-details { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 9px; }
+.room-details summary {
+  cursor: pointer; color: var(--muted); font-size: 12px;
+  list-style: none; display: flex; align-items: center; gap: 6px;
+}
+.room-details summary::-webkit-details-marker { display: none; }
+.room-details summary::marker { content: ""; }
+.room-details summary::before { content: "›"; display: inline-block; transition: transform .15s; }
+.room-details[open] summary::before { transform: rotate(90deg); }
+.room-details.no-entries { color: var(--muted); font-size: 12px; cursor: default; }
+.entry-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.entry {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 9px;
+  padding: 7px 9px; border-radius: 9px; background: var(--surface-2);
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+}
+.entry-period { color: var(--busy); font-size: 11.5px; font-weight: 650; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.entry-course { color: var(--ink); font-size: 12px; overflow-wrap: anywhere; }
+.entry-meta { grid-column: 2; color: var(--faint); font-size: 10.5px; }
+.entry.unknown .entry-period, .entry.unknown .entry-course { color: var(--unknown); }
+.empty {
+  grid-column: 1 / -1; padding: 44px 20px; text-align: center;
+  border: 1px dashed var(--line); border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 60%, transparent); color: var(--muted);
+}
+.empty strong { display: block; color: var(--ink); font-size: 16px; margin-bottom: 4px; }
+
+/* ==================== 总览表 ==================== */
+.table-wrap {
+  overflow: visible;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--surface); box-shadow: var(--shadow-sm);
+}
+body.table-view .topbar { position: static; }
+.matrix-head-wrap {
+  position: sticky; top: 0; z-index: 8;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  border-radius: var(--radius) var(--radius) 0 0;
+  overflow: hidden;
+}
+.matrix-head-scroll { overflow: hidden; }
+.matrix-body-scroll { overflow-x: auto; overflow-y: visible; }
+.matrix { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 960px; table-layout: fixed; font-size: 12px; }
+.matrix th, .matrix td { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 7px 6px; text-align: center; white-space: nowrap; }
+.matrix th:last-child, .matrix td:last-child { border-right: 0; }
+.matrix thead th { position: sticky; top: 0; z-index: 5; background: var(--surface-2); color: var(--muted); font-weight: 600; }
+.matrix thead th.now { background: var(--blue-soft); color: var(--blue); }
+.matrix thead th small { display: block; font-weight: 400; font-size: 10px; color: var(--faint); }
+.matrix .room-col { position: sticky; left: 0; z-index: 4; background: var(--surface); text-align: left; width: 126px; min-width: 126px; }
+.matrix thead th.room-col { z-index: 6; background: var(--surface-2); }
+.matrix tbody tr:hover .room-col { background: var(--surface-2); }
+.matrix .room-col b { display: block; font-size: 13.5px; color: var(--ink); }
+.matrix .room-col small { color: var(--faint); font-size: 10px; }
+.cell { min-width: 54px; height: 38px; }
+.cell-free { background: var(--brand-soft); }
+.cell-busy { background: var(--busy-soft); color: var(--busy); font-size: 10.5px; max-width: 92px; overflow: hidden; text-overflow: ellipsis; }
+.cell-unknown {
+  color: var(--muted);
+  background-image: repeating-linear-gradient(45deg, transparent 0 5px, color-mix(in srgb, var(--unknown) 14%, transparent) 5px 10px);
+  background-color: var(--unknown-soft);
+}
+.cell-now { box-shadow: inset 0 0 0 2px var(--blue); }
+.matrix thead th.block-focus { background: var(--brand-soft); color: var(--brand-ink); }
+.matrix td.block-focus { outline: 2px solid color-mix(in srgb, var(--brand) 55%, transparent); outline-offset: -2px; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; padding: 8px 12px; color: var(--muted); font-size: 11.5px; border-top: 1px solid var(--line); }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.swatch { width: 12px; height: 12px; border-radius: 4px; border: 1px solid var(--line); }
+.swatch.free { background: var(--brand-soft); }
+.swatch.busy { background: var(--busy-soft); }
+.swatch.unknown { background-image: repeating-linear-gradient(45deg, transparent 0 3px, color-mix(in srgb, var(--unknown) 25%, transparent) 3px 6px); background-color: var(--unknown-soft); }
+
+/* ==================== 页脚 ==================== */
+.foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 22px; color: var(--faint); font-size: 11.5px; }
+
+/* ==================== 弹窗 ==================== */
+.modal { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 18px; }
+.modal-backdrop { position: absolute; inset: 0; background: rgba(7, 12, 18, .48); backdrop-filter: blur(4px); }
+.modal-panel {
+  position: relative; width: min(700px, 100%); max-height: 90vh; display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .22); overflow: hidden;
+}
+.modal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.modal-head h2 { margin: 0; font-size: 18px; }
+.modal-body { overflow: auto; padding: 18px 20px; display: grid; gap: 20px; }
+.modal-foot { display: flex; align-items: center; justify-content: flex-end; gap: 9px; padding: 13px 20px; border-top: 1px solid var(--line); background: var(--surface-2); }
+.setting-block { display: grid; gap: 9px; }
+.setting-block h3 { margin: 0; font-size: 13px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.field { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13.5px; }
+.field input, .field select { padding: 7px 9px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+.hint { color: var(--muted); font-size: 12px; margin: 0; }
+.error { color: var(--danger); font-size: 12.5px; margin-right: auto; }
+.periods-editor { display: grid; grid-template-columns: 62px minmax(0, 1fr) minmax(0, 1fr); gap: 7px 9px; align-items: center; }
+.periods-editor .p-label { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.periods-editor input { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.data-info { font-size: 12.5px; color: var(--muted); }
+.data-info dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; }
+.data-info dt { color: var(--faint); }
+.data-info dd { margin: 0; color: var(--ink); }
+.warning-list { margin: 8px 0 0; padding-left: 18px; font-size: 12px; color: var(--muted); }
+.warning-list li { margin: 3px 0; }
+.toast {
+  position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+  z-index: 80; max-width: min(520px, calc(100vw - 32px));
+  padding: 10px 14px; border-radius: 11px; background: var(--ink); color: var(--bg);
+  font-size: 12.5px; box-shadow: 0 12px 30px rgba(0, 0, 0, .22);
+}
+
+/* ==================== 响应式 ==================== */
+@media (max-width: 900px) {
+  .hero { grid-template-columns: 1fr; }
+  .hero-stats { justify-content: flex-start; flex-wrap: wrap; }
+  .stat { flex: 1 1 90px; }
+}
+@media (max-width: 680px) {
+  .topbar-inner { padding: 11px 14px; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .brand { flex: 1 1 100%; }
+  .brand-mark { width: 40px; height: 40px; border-radius: 12px; font-size: 17px; }
+  .brand-text h1 { font-size: 17px; }
+  .brand-text p { font-size: 11.5px; }
+  .top-actions { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+  .date-control { flex: 1 1 100%; min-width: 0; }
+  .date-control input { min-width: 0; width: 100%; flex: 1 1 auto; font-size: 13px; }
+  .ghost-btn { padding: 8px 10px; }
+  .app { padding: 14px 14px 38px; }
+  .hero { padding: 18px; border-radius: 16px; }
+  .hero-title { font-size: 27px; }
+  .note-bar { display: block; }
+  .note-bar span { display: block; margin: 2px 0; overflow-wrap: anywhere; }
+  .toolbar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  #minFilter { grid-column: 1 / -1; justify-content: space-between; }
+  .toolbar .spacer { display: none; }
+  .toggle { justify-content: center; min-width: 0; }
+  .search { grid-column: 1 / -1; width: 100%; min-width: 0; order: 0; }
+  #viewToggle { grid-column: 1 / -1; justify-self: end; }
+  .room-list { grid-template-columns: 1fr; }
+  .room-card { min-width: 0; }
+  .room-head { gap: 8px; }
+  .room-name { overflow-wrap: anywhere; }
+  .segmented button { padding: 6px 8px; }
+  .periods-editor { grid-template-columns: 52px minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">FR</div>
+      <div class="brand-text">
+        <h1>Free Room Finder</h1>
+        <p id="subtitle">正在载入课表…</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <div class="date-control">
+        <button id="prevDay" class="icon-btn" type="button" title="前一天" aria-label="前一天">‹</button>
+        <input id="dateInput" type="date" aria-label="选择日期">
+        <button id="nextDay" class="icon-btn" type="button" title="后一天" aria-label="后一天">›</button>
+      </div>
+      <button id="todayBtn" class="ghost-btn" type="button">今天</button>
+      <button id="settingsBtn" class="ghost-btn" type="button">设置</button>
+    </div>
+  </div>
+</header>
+
+<main class="app">
+  <section class="hero" aria-label="今日概况">
+    <div>
+      <div class="hero-kicker" id="heroKicker">今天</div>
+      <div class="hero-title" id="heroTitle">—</div>
+      <div class="hero-sub" id="heroSub"></div>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><span id="statFree">—</span><small id="statFreeLabel">此刻空闲</small></div>
+      <div class="stat"><span id="statRooms">—</span><small>教室总数</small></div>
+      <div class="stat"><span id="statLongest">—</span><small>最长连空</small></div>
+    </div>
+  </section>
+
+  <section class="note-bar" id="noteBar" aria-live="polite"></section>
+
+  <section class="toolbar" aria-label="筛选与视图">
+    <div class="segmented" id="minFilter" role="group" aria-label="最少连空节数">
+      <button type="button" data-min="0">不限</button>
+      <button type="button" data-min="2" class="active">≥2 节</button>
+      <button type="button" data-min="3">≥3 节</button>
+      <button type="button" data-min="4">≥4 节</button>
+    </div>
+    <label class="toggle" id="nowToggle"><input id="nowFilter" type="checkbox"><span>此刻空闲</span></label>
+    <label class="toggle" id="nextBlockToggle" title="接下来的连续两节（一大节）"><input id="nextBlockFilter" type="checkbox"><span>下一大节</span></label>
+    <label class="toggle"><input id="showAll" type="checkbox"><span>显示全部教室</span></label>
+    <div class="spacer"></div>
+    <input id="search" class="search" type="search" placeholder="搜索教室号 / 容量" aria-label="搜索教室">
+    <div class="segmented" id="viewToggle" role="group" aria-label="视图切换">
+      <button type="button" data-view="list" class="active">列表</button>
+      <button type="button" data-view="table">总览表</button>
+    </div>
+  </section>
+
+  <section id="roomList" class="room-list" aria-live="polite"></section>
+  <section id="tableView" class="table-wrap" hidden aria-label="教室空档总览表"></section>
+
+  <footer class="foot">
+    <span id="footNote">课表来自教室 PDF，离线可用；设置自动保存在本机。</span>
+    <button id="dataInfoBtn" class="link-btn" type="button">数据说明</button>
+  </footer>
+</main>
+
+<div id="settingsModal" class="modal" hidden>
+  <div class="modal-backdrop" data-close="1"></div>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal-head">
+      <h2 id="settingsTitle">设置</h2>
+      <button id="closeSettings" class="icon-btn" type="button" title="关闭" aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body">
+      <section class="setting-block">
+        <h3>学期</h3>
+        <label class="field">第 1 周周一
+          <input id="week1Input" type="date">
+        </label>
+        <p class="hint" id="weekHint"></p>
+      </section>
+      <section class="setting-block">
+        <h3>作息时间</h3>
+        <div id="periodsEditor" class="periods-editor"></div>
+        <button id="resetPeriods" class="ghost-btn small" type="button">恢复默认时间</button>
+      </section>
+      <section class="setting-block">
+        <h3>显示偏好</h3>
+        <label class="field">默认连空
+          <select id="defaultMin">
+            <option value="0">不限</option>
+            <option value="2">至少 2 节</option>
+            <option value="3">至少 3 节</option>
+            <option value="4">至少 4 节</option>
+          </select>
+        </label>
+      </section>
+      <section class="setting-block data-info" id="dataInfo"></section>
+    </div>
+    <div class="modal-foot">
+      <span id="settingsError" class="error" role="alert"></span>
+      <button id="cancelSettings" class="ghost-btn" type="button">取消</button>
+      <button id="saveSettings" class="primary-btn" type="button">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
+
+<!--__SCHEDULE_DATA__-->
+<!--__LOGIC_JS__-->
+<!--__UI_JS__-->
+</body>
+</html>
