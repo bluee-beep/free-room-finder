@@ -25,7 +25,7 @@ free-room-finder/
 ├── CHANGELOG.md             # 变更日志（版本历史）
 ├── .gitignore               # 排除 *.pdf、versions/ 等含个人信息的本地产物
 ├── versions/
-│   └── v1.1.3_2026-10-26/   # 完整版本快照（只读存档，仅本地）
+│   └── v1.1.4_2026-10-26/   # 完整版本快照（只读存档，仅本地）
 └── *.pdf                    # 原始教室课表（只读数据源，不入公开仓库）
 ```
 
@@ -84,7 +84,7 @@ node tools/test_logic.js
 - 根目录是工作区；`versions/` 存放只读版本快照。
 - 每次发布：更新 `CHANGELOG.md`，创建 `versions/vX.Y.Z_YYYY-MM-DD/`，复制 HTML、`data/`、`tools/`、README/CLAUDE/CHANGELOG 与 29 份 PDF，生成 `VERSION.md`、`PDF_MANIFEST.txt`、`SHA256SUMS.txt`。
 - 快照可独立打开和重新构建；不要修改快照文件。
-- 当前稳定版：**v1.1.3（2026-10-26）**，快照 `versions/v1.1.3_2026-10-26/`（仅本地，不入库）。
+- 当前稳定版：**v1.1.4（2026-10-26）**，快照 `versions/v1.1.4_2026-10-26/`（仅本地，不入库）。
 
 ## 已知数据事实
 
