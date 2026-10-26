@@ -26,10 +26,6 @@
     heroKicker: document.getElementById("heroKicker"),
     heroTitle: document.getElementById("heroTitle"),
     heroSub: document.getElementById("heroSub"),
-    statFree: document.getElementById("statFree"),
-    statFreeLabel: document.getElementById("statFreeLabel"),
-    statRooms: document.getElementById("statRooms"),
-    statLongest: document.getElementById("statLongest"),
     noteBar: document.getElementById("noteBar"),
     minFilter: document.getElementById("minFilter"),
     nowToggle: document.getElementById("nowToggle"),
@@ -209,15 +205,6 @@
     return "第" + block.start + "–" + block.end + "节 " + block.startTime + "–" + block.endTime;
   }
 
-  function blockFreeCount(ctx) {
-    if (!ctx.nextBlock) {
-      return 0;
-    }
-    return ROOMS.filter(function (room) {
-      return L.isBlockFree(room, ctx.day, ctx.week, ctx.nextBlock);
-    }).length;
-  }
-
   function nowLabel(ctx) {
     if (!ctx.isToday) {
       return "";
@@ -238,27 +225,6 @@
     return !L.isOccupied(room, ctx.day, ctx.week, period);
   }
 
-  function freeNowCount(ctx) {
-    if (!ctx.canNow) {
-      return 0;
-    }
-    return ROOMS.filter(function (room) {
-      return roomFreeAt(room, ctx, ctx.nowPeriod);
-    }).length;
-  }
-
-  function maxWindowLength(ctx) {
-    var max = 0;
-    ROOMS.forEach(function (room) {
-      var windows = L.freeWindows(room, ctx.day, ctx.week, state.settings.periods);
-      windows.forEach(function (w) {
-        if (w.length > max) {
-          max = w.length;
-        }
-      });
-    });
-    return max;
-  }
 
   function buildSummaries(ctx) {
     var all = ROOMS.map(function (room) {
@@ -318,48 +284,16 @@
       sub += " · 非教学周";
     }
     el.heroSub.textContent = sub;
-
-    if (state.nextBlockOnly && ctx.nextBlock) {
-      var nextFree = blockFreeCount(ctx);
-      el.statFreeLabel.textContent = "下一大节空闲";
-      el.statFree.textContent = nextFree + " 间";
-      el.statFree.title = "按接下来的连续两节都为空计算";
-    } else {
-      var free = freeNowCount(ctx);
-      el.statFreeLabel.textContent = "此刻空闲";
-      el.statFree.textContent = ctx.canNow ? free + " 间" : "—";
-      el.statFree.title = ctx.canNow
-        ? (ctx.nowInfo.state === "next" ? "按下一节为空闲计算" : "按当前节为空闲计算")
-        : "当前不可用";
-    }
-    el.statRooms.textContent = ROOMS.length + " 间";
-    var max = maxWindowLength(ctx);
-    el.statLongest.textContent = max ? max + " 节" : "—";
   }
 
   function renderNotes(ctx) {
-    var nodes = [];
-    function add(text) {
-      var span = document.createElement("span");
-      span.textContent = text;
-      nodes.push(span);
-    }
-    if (META.missingRooms && META.missingRooms.length) {
-      add("未提供课表：" + META.missingRooms.join(" / "));
-    }
-    if (META.manualOverrides && META.manualOverrides.length) {
-      add("已人工核对：" + META.manualOverrides.join("、") + "（依据图片补全）");
-    }
-    var warnings = filteredWarnings();
-    if (warnings.length) {
-      var rooms = Array.from(new Set(warnings.map(function (w) { return w.room; }).filter(Boolean)));
-      add("源数据提示 " + warnings.length + " 条" + (rooms.length ? "（" + rooms.join("、") + "）" : "") + "：截断节次已按相邻 2 节补全，详见数据说明");
-    }
-    if (ctx.week < 1 || ctx.week > 30) {
-      add("第 " + ctx.week + " 周不在课表周次范围（1–30 周），结果仅供参考");
-    }
     el.noteBar.textContent = "";
-    nodes.forEach(function (node) { el.noteBar.appendChild(node); });
+    // 只保留功能性提示；数据细节收进「数据说明」，不再占用首屏
+    if (ctx.week < 1 || ctx.week > 30) {
+      var span = document.createElement("span");
+      span.textContent = "第 " + ctx.week + " 周不在课表周次范围（1–30 周），结果仅供参考";
+      el.noteBar.appendChild(span);
+    }
   }
 
   function filteredWarnings() {
@@ -523,9 +457,6 @@
       if (status) {
         statusBox.appendChild(status);
       }
-      if (room.status === "override") {
-        statusBox.appendChild(makeBadge("已核对", "ok"));
-      }
       if (state.nextBlockOnly && ctx.nextBlock) {
         statusBox.appendChild(makeBadge(
           "下一大节 第" + ctx.nextBlock.start + "–" + ctx.nextBlock.end + "节", "ok"
@@ -660,7 +591,7 @@
       var b = document.createElement("b");
       b.textContent = room.id;
       var sm = document.createElement("small");
-      sm.textContent = (room.capacity ? room.capacity + "座" : "") + (room.status === "override" ? " · 已核对" : "");
+      sm.textContent = room.capacity ? room.capacity + "座" : "";
       rh.appendChild(b);
       rh.appendChild(sm);
       tr.appendChild(rh);
@@ -854,7 +785,6 @@
     row("课程记录", META.entryCount + " 条已知" + (META.unknownEntryCount ? " / " + META.unknownEntryCount + " 条未知" : ""));
     row("解析统计", "原始 " + META.rawEntryCount + " 条，重复 " + META.duplicatesRemoved + " 条");
     row("未提供课表", (META.missingRooms || []).join(" / ") || "无");
-    row("人工核对", (META.manualOverrides || []).join("、") || "无");
     el.dataInfo.appendChild(dl);
     var warnings = filteredWarnings();
     var title = document.createElement("p");
@@ -874,7 +804,7 @@
     }
     var help = document.createElement("p");
     help.className = "hint";
-    help.textContent = "308 依据用户提供的课表图片与详情图核对补全；306/406/408/506 没有课表文件，未纳入计算。";
+    help.textContent = "306/406/408/506 没有课表文件，未纳入计算。";
     el.dataInfo.appendChild(help);
   }
 

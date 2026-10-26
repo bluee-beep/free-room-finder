@@ -149,7 +149,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 }
 .hero {
   position: relative; overflow: hidden;
-  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px;
   padding: 24px 26px; border: 1px solid var(--line); border-radius: 20px;
   background:
     radial-gradient(480px 180px at 100% 0%, rgba(15, 157, 118, .12), transparent 70%),
@@ -171,15 +171,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .hero-title { margin: 8px 0 4px; font-size: clamp(26px, 3.4vw, 38px); line-height: 1.15; letter-spacing: -.02em; }
 .hero-sub { color: var(--muted); font-size: 13.5px; }
 .hero-sub strong { color: var(--ink); font-weight: 600; }
-.hero-stats { display: flex; align-items: stretch; gap: 10px; align-self: center; position: relative; z-index: 1; }
-.stat {
-  min-width: 92px; padding: 12px 14px; border: 1px solid var(--line);
-  border-radius: 14px; background: color-mix(in srgb, var(--surface) 78%, transparent);
-  text-align: center;
-}
-.stat span { display: block; font-size: 21px; font-weight: 750; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
-.stat small { display: block; margin-top: 2px; color: var(--muted); font-size: 11.5px; }
-
 /* ==================== 提示条 ==================== */
 .note-bar {
   margin: 14px 0 0; padding: 10px 14px; border: 1px solid color-mix(in srgb, var(--blue) 20%, var(--line));
@@ -341,6 +332,7 @@ body.table-view .matrix-head-wrap { top: var(--safe-top); }
 
 /* ==================== 页脚 ==================== */
 .foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 22px; color: var(--faint); font-size: 11.5px; }
+.foot-links { display: inline-flex; align-items: center; gap: 14px; }
 
 /* ==================== 弹窗 ==================== */
 .modal {
@@ -382,8 +374,6 @@ body.table-view .matrix-head-wrap { top: var(--safe-top); }
 /* ==================== 响应式 ==================== */
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; }
-  .hero-stats { justify-content: flex-start; flex-wrap: wrap; }
-  .stat { flex: 1 1 90px; }
 }
 @media (max-width: 680px) {
   .topbar-inner { padding: 11px 14px; align-items: center; flex-wrap: wrap; gap: 8px; }
@@ -435,7 +425,6 @@ body.table-view .matrix-head-wrap { top: var(--safe-top); }
         <button id="nextDay" class="icon-btn" type="button" title="后一天" aria-label="后一天">›</button>
       </div>
       <button id="todayBtn" class="ghost-btn" type="button">今天</button>
-      <button id="settingsBtn" class="ghost-btn" type="button">设置</button>
     </div>
   </div>
 </header>
@@ -446,11 +435,6 @@ body.table-view .matrix-head-wrap { top: var(--safe-top); }
       <div class="hero-kicker" id="heroKicker">今天</div>
       <div class="hero-title" id="heroTitle">—</div>
       <div class="hero-sub" id="heroSub"></div>
-    </div>
-    <div class="hero-stats">
-      <div class="stat"><span id="statFree">—</span><small id="statFreeLabel">此刻空闲</small></div>
-      <div class="stat"><span id="statRooms">—</span><small>教室总数</small></div>
-      <div class="stat"><span id="statLongest">—</span><small>最长连空</small></div>
     </div>
   </section>
 
@@ -479,7 +463,10 @@ body.table-view .matrix-head-wrap { top: var(--safe-top); }
 
   <footer class="foot">
     <span id="footNote">课表来自教室 PDF，离线可用；设置自动保存在本机。</span>
-    <button id="dataInfoBtn" class="link-btn" type="button">数据说明</button>
+    <span class="foot-links">
+      <button id="dataInfoBtn" class="link-btn" type="button">数据说明</button>
+      <button id="settingsBtn" class="link-btn" type="button">设置</button>
+    </span>
   </footer>
 </main>
 
